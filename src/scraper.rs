@@ -1,16 +1,59 @@
 use crate::Coffee;
 use reqwest::Error;
 use scraper::{Html, Selector};
+use std::collections::HashSet;
 
 pub fn fetch_coffees() -> Result<Vec<Coffee>, Error> {
-    let url = "https://www.kofio.cz/kava/filtr";
-    println!("Stahuji data z Kofio.cz: {}\n", url);
+    let mut all_coffees = Vec::new();
+    let mut seen_keys = HashSet::new();
+    let mut offset = 0; // (?s=0, ?s=24, ?s=48...)
 
-    let response = reqwest::blocking::get(url)?;
-    let html_content = response.text()?;
+    loop {
+        let url = format!("https://www.kofio.cz/kava/filtr?s={}", offset);
+        println!("Stahuji nabídku káv (offset {})...", offset);
 
-    let coffees = parse_coffees(&html_content);
-    Ok(coffees)
+        let response = reqwest::blocking::get(&url)?;
+        let html_content = response.text()?;
+
+        let coffees_on_page = parse_coffees(&html_content);
+
+        if coffees_on_page.is_empty() {
+            println!("Žádné další kávy nenalezeny.");
+            break;
+        }
+
+        let mut new_coffees_count = 0;
+
+        for coffee in coffees_on_page {
+            // (např. "Kolumbie LA CABAÑA-Beansmith.s-250")
+            let unique_key = format!("{}-{}-{}", coffee.name, coffee.roaster, coffee.weight_g);
+
+            if seen_keys.insert(unique_key) {
+                all_coffees.push(coffee);
+                new_coffees_count += 1;
+            }
+        }
+
+        println!(
+            " -> Přidáno {} nových káv (celkem načteno: {}).",
+            new_coffees_count,
+            all_coffees.len()
+        );
+
+        if new_coffees_count == 0 {
+            println!("Dosaženo konce nabídky.");
+            break;
+        }
+
+        offset += 24;
+
+        // pro vývoj
+        if offset > 48 {
+            break;
+        }
+    }
+
+    Ok(all_coffees)
 }
 
 /// Parsuje HTML dokument a extrahuje z něj seznam produktů kávy.
@@ -70,7 +113,7 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
 
         // extrakce gramáže
         let mut weight_g: u32 = 0;
-        
+
         if let Some(small_el) = item.select(&small_selector).next() {
             let small_text = small_el.text().collect::<String>();
             weight_g = extract_weight(&small_text);
@@ -79,7 +122,7 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
         if weight_g == 0 {
             weight_g = extract_weight(&name);
         }
-        
+
         if weight_g == 0 {
             weight_g = 250; // Fallback na 250g
         }
@@ -115,7 +158,7 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
             Some(el) => el.text().collect::<String>(),
             None => "".to_string(),
         };
-        
+
         let flavors = flavors_raw
             .split_whitespace()
             .collect::<Vec<&str>>()
