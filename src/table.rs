@@ -20,6 +20,8 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
     let mut table = Table::new();
     table.load_preset(UTF8_FULL);
 
+    table.set_content_arrangement(ContentArrangement::Dynamic);
+
     table.set_header(vec![
         Cell::new("#").add_attribute(Attribute::Bold),
         Cell::new("Název").add_attribute(Attribute::Bold),
@@ -27,6 +29,7 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
         Cell::new("Balení").add_attribute(Attribute::Bold),
         Cell::new("Cena").add_attribute(Attribute::Bold),
         Cell::new("Cena / 100g").add_attribute(Attribute::Bold),
+        Cell::new("Chuťový profil").add_attribute(Attribute::Bold),
         Cell::new("Skladem").add_attribute(Attribute::Bold),
     ]);
 
@@ -46,6 +49,12 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
         let rank = index + 1;
         let is_top3 = rank <= 3;
 
+        let flavors_display = if coffee.flavors.trim().is_empty() {
+            "-".to_string()
+        } else {
+            coffee.flavors.clone()
+        };
+
         let mut row = vec![
             Cell::new(rank.to_string()),
             Cell::new(&coffee.name),
@@ -53,6 +62,7 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
             Cell::new(format!("{}g", coffee.weight_g)),
             Cell::new(format!("{:.0} Kč", coffee.price_czk)),
             Cell::new(format!("{:.2} Kč", coffee.price_per_100g())),
+            Cell::new(flavors_display),
             Cell::new(&coffee.stock),
         ];
 
