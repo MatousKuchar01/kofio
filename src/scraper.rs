@@ -1,26 +1,38 @@
 use crate::Coffee;
+use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Error;
 use scraper::{Html, Selector};
 use std::collections::HashSet;
+use std::time::Duration;
 
 pub fn fetch_coffees() -> Result<Vec<Coffee>, Error> {
     let mut all_coffees = Vec::new();
     let mut seen_keys = HashSet::new();
     let mut offset = 0; // (?s=0, ?s=24, ?s=48...)
 
+    let pb = ProgressBar::new_spinner();
+
+    pb.set_style(
+        ProgressStyle::default_spinner()
+            .tick_chars("|/-\\ ")
+            .template("{spinner:.bold.green} {msg}")
+            .unwrap(),
+    );
+
+    pb.enable_steady_tick(Duration::from_millis(80));
+
     loop {
+        pb.set_message(format!(
+            "Stahuji Kofio.cz | Načteno {} káv...",
+            all_coffees.len()
+        ));
+
         let url = format!("https://www.kofio.cz/kava/filtr?s={}", offset);
-        println!("Stahuji nabídku káv (offset {})...", offset);
 
         let response = reqwest::blocking::get(&url)?;
         let html_content = response.text()?;
 
         let coffees_on_page = parse_coffees(&html_content);
-
-        if coffees_on_page.is_empty() {
-            println!("Žádné další kávy nenalezeny.");
-            break;
-        }
 
         let mut new_coffees_count = 0;
 
@@ -34,24 +46,22 @@ pub fn fetch_coffees() -> Result<Vec<Coffee>, Error> {
             }
         }
 
-        println!(
-            " -> Přidáno {} nových káv (celkem načteno: {}).",
-            new_coffees_count,
-            all_coffees.len()
-        );
-
         if new_coffees_count == 0 {
-            println!("Dosaženo konce nabídky.");
             break;
         }
 
         offset += 24;
 
         // pro vývoj
-        if offset > 48 {
+        /*if offset > 48 {
             break;
-        }
+        }*/
     }
+
+    pb.finish_with_message(format!(
+        " Staženo celkem {} káv z Kofio.cz\n",
+        all_coffees.len()
+    ));
 
     Ok(all_coffees)
 }
