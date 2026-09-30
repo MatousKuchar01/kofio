@@ -11,7 +11,7 @@ reqwest = { version = "0.11", features = ["blocking"] }
 # HTML parsing
 scraper = "0.18"
 # Table formating
-comfy-table = "7.1"
+comfy-table = { version = "7.1", features = ["custom_styling"] }
 # Spinner and loader
 indicatif = "0.17"
 # Colors in CLI
