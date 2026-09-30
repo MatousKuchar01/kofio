@@ -12,6 +12,7 @@ pub struct Coffee {
     pub price_czk: f64,
     pub stock: String,
     pub flavors: String,
+    pub url: String,
 }
 
 impl Coffee {

@@ -70,7 +70,7 @@ pub fn fetch_coffees() -> Result<Vec<Coffee>, Error> {
 ///
 /// Funkce prochází HTML strukturu pomocí CSS selektorů a vyhledává elementy reprezentující
 /// jednotlivé kávy (`div.category_item`). U každé položky se pokouší extrahovat název,
-/// pražírnu, hmotnost, cenu, dostupnost a chuťový profil.
+/// odkaz na detail, pražírnu, hmotnost, cenu, dostupnost a chuťový profil.
 ///
 /// # Chování a fallbacky
 ///
@@ -100,9 +100,23 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
     let mut coffees = Vec::new();
 
     for item in document.select(&item_selector) {
-        // extrakce názvu kávy
-        let name = match item.select(&name_selector).next() {
-            Some(el) => el.text().collect::<String>().trim().to_string(),
+        // extrakce názvu kávy a odkazu na detail
+        let (name, url) = match item.select(&name_selector).next() {
+            Some(el) => {
+                let text = el.text().collect::<String>().trim().to_string();
+                let href = el.value().attr("href").unwrap_or("").trim();
+
+                // relativní cestu doplníme o doménu
+                let full_url = if href.starts_with("http") {
+                    href.to_string()
+                } else if !href.is_empty() {
+                    format!("https://www.kofio.cz{}", href)
+                } else {
+                    String::new()
+                };
+
+                (text, full_url)
+            }
             None => continue, // Pokud káva nemá název, přeskočíme
         };
 
@@ -182,6 +196,7 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
                 price_czk,
                 stock,
                 flavors,
+                url,
             });
         }
     }

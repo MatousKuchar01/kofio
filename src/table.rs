@@ -2,6 +2,9 @@ use crate::Coffee;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
 
+/// Štítek zobrazený ve sloupci "Odkaz". Sloupec má `ColumnConstraint::ContentWidth`, takže se štítek nikdy nezalomí.
+const LINK_LABEL: &str = "otevřít ↗";
+
 /// Vytiskne přehlednou tabulku káv do standardního výstupu (STDOUT).
 ///
 /// Funkce využívá formátování sady znaků UTF-8 (`UTF8_FULL`) pro vykreslení tabulky.
@@ -12,6 +15,10 @@ use comfy_table::*;
 /// * **Zarovnání:** Sloupce pro balení (hmotnost), celkovou cenu a cenu za 100g jsou zarovnány **doprava** pro lepší čitelnost číselných hodnot.
 /// * **Zvýraznění TOP 3:** První **tři položky** (indexy 0, 1, 2) jsou v tabulce zvýrazněny **zelenou barvou a tučným písmem**, což je ideální pro zobrazení nejvýhodnějších nebo nejlépe hodnocených káv.
 /// * **Výpočet ceny:** Pro sloupec "Cena / 100g" funkce interně volá metodu `.price_per_100g()` na struktuře `Coffee`.
+/// * **Odkaz:** Sloupec "Odkaz" obsahuje krátký štítek, pod kterým je schovaná URL detailu kávy
+///   jako terminálový hyperlink (OSC 8). V terminálech s podporou hyperlinků (GNOME Terminal, Kitty,
+///   WezTerm, iTerm2, Windows Terminal, VS Code…) jde kliknout (obvykle s Ctrl), jinde se zobrazí jen štítek.
+///   Sloupec má pevnou šířku podle obsahu, aby se štítek nikdy nezalomil a odkaz zůstal celistvý.
 ///
 /// # Arguments
 ///
@@ -31,6 +38,7 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
         Cell::new("Cena / 100g").add_attribute(Attribute::Bold),
         Cell::new("Chuťový profil").add_attribute(Attribute::Bold),
         Cell::new("Skladem").add_attribute(Attribute::Bold),
+        Cell::new("Odkaz").add_attribute(Attribute::Bold),
     ]);
 
     if let Some(column) = table.column_mut(3) {
@@ -43,6 +51,10 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
 
     if let Some(column) = table.column_mut(5) {
         column.set_cell_alignment(CellAlignment::Right)
+    }
+
+    if let Some(column) = table.column_mut(8) {
+        column.set_constraint(ColumnConstraint::ContentWidth);
     }
 
     for (index, coffee) in coffees.iter().enumerate() {
@@ -64,6 +76,7 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
             Cell::new(format!("{:.2} Kč", coffee.price_per_100g())),
             Cell::new(flavors_display),
             Cell::new(&coffee.stock),
+            Cell::new(link_cell(&coffee.url)),
         ];
 
         if is_top3 {
@@ -77,4 +90,18 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
     }
 
     println!("{table}");
+}
+
+/// Vrátí text buňky s odkazem: krátký štítek obalený OSC 8 hyperlinkem na `url`.
+fn link_cell(url: &str) -> String {
+    if url.is_empty() {
+        return "-".to_string();
+    }
+
+    hyperlink(url, LINK_LABEL)
+}
+
+/// Obalí `label` terminálovým hyperlinkem (OSC 8): `ESC ] 8 ; ; url ESC \ label ESC ] 8 ; ; ESC \`.
+fn hyperlink(url: &str, label: &str) -> String {
+    format!("\x1b]8;;{url}\x1b\\{label}\x1b]8;;\x1b\\")
 }
