@@ -2,17 +2,27 @@
 name = "kofio-cli"
 version = "0.1.0"
 edition = "2024"
+description = "Scraper kávy z Kofio.cz"
+repository = "https://github.com/MatousKuchar01/kofio.cz_scraper"
+
+[[bin]]
+name = "kofio"
+path = "src/main.rs"
 
 [dependencies]
 # CLI parsing
 clap = { version = "4.4", features = ["derive"] }
-# HTTP client
-reqwest = { version = "0.11", features = ["blocking"] }
+# HTTP client – rustls místo systémového OpenSSL, aby binárka běžela všude bez závislostí
+reqwest = { version = "0.11", default-features = false, features = ["blocking", "rustls-tls"] }
 # HTML parsing
 scraper = "0.18"
-# Table formating
+# Table formating (custom_styling = správné měření šířky buněk s ANSI/OSC sekvencemi)
 comfy-table = { version = "7.1", features = ["custom_styling"] }
 # Spinner and loader
 indicatif = "0.17"
 # Colors in CLI
 colored = "2.1"
+
+[profile.dist]
+inherits = "release"
+lto = "thin"
