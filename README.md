@@ -1,4 +1,4 @@
-# kofio -> scraper kávy z Kofio.cz
+# kofio -> scraper kávy z kofio.cz
 
 CLI nástroj, který stáhne nabídku zrnkové kávy z [kofio.cz](https://www.kofio.cz)
 
