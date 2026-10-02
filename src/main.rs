@@ -3,6 +3,7 @@ use clap::Parser;
 mod cli;
 mod scraper;
 mod table;
+mod ui;
 
 #[derive(Debug)]
 pub struct Coffee {
@@ -22,8 +23,18 @@ impl Coffee {
 }
 
 fn main() {
+    ui::clear_screen();
+    
     let args = cli::CliArgs::parse();
 
+    let has_filters_applied = args.max_price.is_some() ||
+        args.roaster.is_some() ||
+        args.search.is_some();
+
+    if !has_filters_applied {
+        ui::print_base_menu();
+    }
+    
     match scraper::fetch_coffees() {
         Ok(mut coffees) => {
             // filtry podle zadání uživatele
