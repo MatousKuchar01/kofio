@@ -23,8 +23,6 @@ impl Coffee {
 }
 
 fn main() {
-    ui::clear_screen();
-    
     let args = cli::CliArgs::parse();
 
     let has_filters_applied = args.max_price.is_some() ||
@@ -32,6 +30,7 @@ fn main() {
         args.search.is_some();
 
     if !has_filters_applied {
+        ui::clear_screen();
         ui::print_base_menu();
     }
     
