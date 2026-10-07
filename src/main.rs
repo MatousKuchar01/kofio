@@ -1,11 +1,13 @@
 use clap::Parser;
+use serde::{Deserialize, Serialize};
 
 mod cli;
 mod scraper;
 mod table;
 mod ui;
+mod cache;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Coffee {
     pub name: String,
     pub roaster: String,
@@ -22,6 +24,7 @@ impl Coffee {
     }
 }
 
+/// hlavní vstupní funkce programu
 fn main() {
     let args = cli::CliArgs::parse();
 
@@ -34,7 +37,7 @@ fn main() {
         ui::print_base_menu();
     }
     
-    match scraper::fetch_coffees() {
+    match load_coffees(args.refresh) {
         Ok(mut coffees) => {
             // filtry podle zadání uživatele
             if let Some(max_p) = args.max_price {
@@ -72,4 +75,25 @@ fn main() {
             println!("Error fetching data: {}", err);
         }
     }
+}
+
+/// vrátí kávy z cache, nebo je stáhne z webu
+fn load_coffees(refresh: bool) -> Result<Vec<Coffee>, reqwest::Error> {
+    if !refresh
+        && let Some(cached) = cache::load()
+        && cached.is_fresh()
+    {
+        ui::print_cache_info(cached.age);
+        return Ok(cached.coffees);
+    }
+
+    let coffees = scraper::fetch_coffees()?;
+
+    if !coffees.is_empty()
+        && let Err(err) = cache::save(&coffees)
+    {
+        eprintln!("Varování: nepodařilo se uložit cache: {err}");
+    }
+    
+    Ok(coffees)
 }

@@ -22,6 +22,11 @@ comfy-table = { version = "7.1", features = ["custom_styling"] }
 indicatif = "0.17"
 # Colors in CLI
 colored = "2.1"
+# Serialization to JSON (cache)
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Path to cache folder
+dirs = "6"
 
 [profile.dist]
 inherits = "release"
