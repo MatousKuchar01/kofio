@@ -1,9 +1,9 @@
 [package]
 name = "kofio-cli"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Scraper kávy z Kofio.cz"
-repository = "https://github.com/MatousKuchar01/kofio.cz_scraper"
+repository = "https://github.com/MatousKuchar01/kofio"
 
 [[bin]]
 name = "kofio"
