@@ -53,9 +53,9 @@ pub fn fetch_coffees() -> Result<Vec<Coffee>, Error> {
         offset += 24;
 
         // pro vývoj
-        if offset > 48 {
+        /*if offset > 48 {
             break;
-        }
+        }*/
     }
 
     pb.finish_with_message(format!(
