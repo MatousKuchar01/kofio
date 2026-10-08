@@ -272,3 +272,6 @@ fn extract_price(text: &str) -> f64 {
     let cleaned = cleaned.replace(',', ".");
     cleaned.parse::<f64>().unwrap_or(0.0)
 }
+
+#[cfg(test)]
+mod tests;
