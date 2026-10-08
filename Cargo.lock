@@ -813,6 +813,7 @@ dependencies = [
  "clap",
  "colored",
  "comfy-table",
+ "crossterm",
  "dirs",
  "indicatif",
  "reqwest",

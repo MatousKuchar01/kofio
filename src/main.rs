@@ -1,7 +1,10 @@
 use clap::Parser;
 use serde::{Deserialize, Serialize};
+use std::io::{self, IsTerminal};
+use std::time::Duration;
 
 mod cli;
+mod pager;
 mod scraper;
 mod table;
 mod ui;
@@ -42,11 +45,17 @@ fn main() {
 
     if !has_filters_applied {
         ui::clear_screen();
-        ui::print_base_menu();
     }
     
     match load_coffees(args.refresh) {
-        Ok(mut coffees) => {
+        Ok((mut coffees, cache_age)) => {
+            let mut cache_info = cache_age.map(ui::cache_info).unwrap_or_default();
+
+            if !io::stdout().is_terminal() {
+                eprint!("{cache_info}");
+                cache_info.clear();
+            }
+
             // filtry podle zadání uživatele
             if let Some(max_p) = args.max_price {
                 coffees.retain(|c| c.price_per_100g() <= max_p);
@@ -77,11 +86,21 @@ fn main() {
             });
 
             if coffees.is_empty() {
+                print!("{cache_info}");
                 println!("\nŽádná káva neodpovídá zadaným filtrům.");
                 return;
             }
 
-            table::print_coffee_table(&coffees);
+            let mut output = String::new();
+
+            if !has_filters_applied {
+                output.push_str(&ui::base_menu());
+            }
+
+            output.push_str(&cache_info);
+            output.push_str(&table::coffee_table(&coffees));
+
+            pager::show(&output, !args.no_pager);
         }
         Err(err) => {
             eprintln!("Nepodařilo se stáhnout data z Kofio.cz: {err}");
@@ -89,14 +108,13 @@ fn main() {
     }
 }
 
-/// vrátí kávy z cache, nebo je stáhne z webu
-fn load_coffees(refresh: bool) -> Result<Vec<Coffee>, reqwest::Error> {
+/// vrátí kávy z cache, nebo je stáhne z webu; u cache vrací i stáří dat
+fn load_coffees(refresh: bool) -> Result<(Vec<Coffee>, Option<Duration>), reqwest::Error> {
     if !refresh
         && let Some(cached) = cache::load()
         && cached.is_fresh()
     {
-        ui::print_cache_info(cached.age);
-        return Ok(cached.coffees);
+        return Ok((cached.coffees, Some(cached.age)));
     }
 
     let coffees = scraper::fetch_coffees()?;
@@ -107,5 +125,5 @@ fn load_coffees(refresh: bool) -> Result<Vec<Coffee>, reqwest::Error> {
         eprintln!("Varování: nepodařilo se uložit cache: {err}");
     }
     
-    Ok(coffees)
+    Ok((coffees, None))
 }

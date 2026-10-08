@@ -22,4 +22,8 @@ pub struct CliArgs {
     /// ignorovat cache a stáhnout čerstvá data
     #[arg(short = 'R', long)]
     pub refresh: bool,
+
+    /// vypsat výsledek přímo bez stránkovače less
+    #[arg(long)]
+    pub no_pager: bool,
 }
