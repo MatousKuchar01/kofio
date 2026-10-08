@@ -6,7 +6,7 @@ use comfy_table::*;
 /// Štítek zobrazený ve sloupci "Odkaz". Sloupec má `ColumnConstraint::ContentWidth`, takže se štítek nikdy nezalomí.
 const LINK_LABEL: &str = "otevřít ↗";
 
-/// Vytiskne přehlednou tabulku káv do standardního výstupu (STDOUT).
+/// Vrátí přehlednou tabulku káv jako text připravený k vypsání.
 ///
 /// Funkce využívá formátování sady znaků UTF-8 (`UTF8_FULL`) pro vykreslení tabulky.
 /// Automaticky počítá pořadí (rank) jednotlivých položek od jedničky.
@@ -23,8 +23,8 @@ const LINK_LABEL: &str = "otevřít ↗";
 ///
 /// # Arguments
 ///
-/// * `coffees` - Slice (pohled na pole) struktur `Coffee`, které se mají v tabulce zobrazit. Pokud je předán prázdný slice, vytiskne se pouze hlavička tabulky.
-pub fn print_coffee_table(coffees: &[Coffee]) {
+/// * `coffees` - Slice (pohled na pole) struktur `Coffee`, které se mají v tabulce zobrazit. Pokud je předán prázdný slice, obsahuje text pouze hlavičku tabulky.
+pub fn coffee_table(coffees: &[Coffee]) -> String {
     let mut table = Table::new();
     table.load_preset(UTF8_FULL);
 
@@ -90,7 +90,7 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
         table.add_row(row);
     }
 
-    println!("{table}");
+    format!("{table}\n")
 }
 
 /// Vrátí text buňky s cenou, u zlevněné kávy doplněný o červené procento slevy, např. "1490 Kč -25 %".

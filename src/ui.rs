@@ -1,4 +1,5 @@
 use colored::*;
+use std::fmt::Write as _;
 use std::io::{self, Write};
 use std::io::IsTerminal;
 use std::time::Duration;
@@ -9,9 +10,10 @@ const BIN: &str = env!("CARGO_BIN_NAME");
 /// Šířka sloupce s přepínači, aby byly popisy za `│` pod sebou.
 const OPT_WIDTH: usize = 22;
 
-/// Vytiskne uvítací UI s popisem používání aplikace a ASCII logem
-pub fn print_base_menu() {
-    
+/// Vrátí uvítací UI s popisem používání aplikace a ASCII logem jako text.
+pub fn base_menu() -> String {
+    let mut menu = String::new();
+
     let ascii_logo = r#"
     %  %  %
    (  (  (
@@ -22,67 +24,99 @@ pub fn print_base_menu() {
    └─────┘
     "#;
 
-    println!("{}", ascii_logo.bright_green().bold());
+    let _ = writeln!(menu, "{}", ascii_logo.bright_green().bold());
 
     
-    println!(
+    let _ = writeln!(
+        menu,
         "{}",
-        "================================================================"
-            .white()
+        separator('=').white()
     );
-    println!(
+    let _ = writeln!(
+        menu,
         "  {} {}",
         "KOFIO CLI SCRAPER".bold().bright_green(),
         format!("v{}", env!("CARGO_PKG_VERSION")).dimmed()
     );
-    println!(
+    let _ = writeln!(
+        menu,
         "{}",
-        "================================================================"
-            .white()
+        separator('=').white()
     );
-    println!("  Spusťte program s volitelnými parametry pro filtrování nabídek:\n");
-    println!(
+    let _ = writeln!(menu, "  Spusťte program s volitelnými parametry pro filtrování nabídek:\n");
+    let _ = writeln!(
+        menu,
         "  {} {}",
         format!("{:<OPT_WIDTH$}", "-m, --max-price <KČ>").bold().yellow(),
         "│ Maximální cena za 100g kávy".dimmed()
     );
-    println!(
+    let _ = writeln!(
+        menu,
         "  {} {}",
         format!("{:<OPT_WIDTH$}", "-r, --roaster <NÁZEV>").bold().yellow(),
         "│ Filtrovat pouze konkrétní pražírnu".dimmed()
     );
-    println!(
+    let _ = writeln!(
+        menu,
         "  {} {}",
         format!("{:<OPT_WIDTH$}", "-s, --search <TEXT>").bold().yellow(),
         "│ Hledat text v názvu kávy nebo v chuťovém profilu".dimmed()
     );
-    println!(
+    let _ = writeln!(
+        menu,
         "  {} {}",
         format!("{:<OPT_WIDTH$}", "-o, --on-sale").bold().yellow(),
         "│ Zobrazit jen zlevněné kávy".dimmed()
     );
-    println!(
+    let _ = writeln!(
+        menu,
         "  {} {}",
         format!("{:<OPT_WIDTH$}", "-R, --refresh").bold().yellow(),
         "│ Stáhnout čerstvá data z webu místo cache".dimmed()
     );
-    println!(
+    let _ = writeln!(
+        menu,
+        "  {} {}",
+        format!("{:<OPT_WIDTH$}", "    --no-pager").bold().yellow(),
+        "│ Vypsat tabulku přímo, bez procházení v less".dimmed()
+    );
+    let _ = writeln!(
+        menu,
         "  {} {BIN} -m 180",
         "•".bright_green()
     );
-    println!(
+    let _ = writeln!(
+        menu,
         "  {} {BIN} -r \"beansmith\" -m 200",
         "•".bright_green()
     );
-    println!(
+    let _ = writeln!(
+        menu,
         "  {} {BIN} -s \"jahody\"",
         "•".bright_green()
     );
-    println!(
-        "\n{}\n",
-        "----------------------------------------------------------------"
-            .white()
+    let _ = writeln!(
+        menu,
+        "\n  {} {}",
+        "Ovládání:".bold(),
+        "↑ ↓ mezerník posun, ← → široká tabulka, / hledat, q konec".dimmed()
     );
+    let _ = writeln!(
+        menu,
+        "\n{}\n",
+        separator('-').white()
+    );
+
+    menu
+}
+
+/// Vrátí čáru ze znaku `ch` přes celou šířku terminálu
+fn separator(ch: char) -> String {
+    let width = crossterm::terminal::size()
+        .map(|(cols, _)| cols as usize)
+        .unwrap_or(64);
+
+    ch.to_string().repeat(width)
 }
 
 /// Vyčistí obrazovku terminálu a posune kurzor na pozici 1x1.
@@ -98,14 +132,14 @@ pub fn clear_screen() {
     let _ = io::stdout().flush();
 }
 
-/// Vypíše informaci že data pochází z cache a jak jsou stará
-pub fn print_cache_info(age: Duration) {
+/// Vrátí informaci, že data pochází z cache a jak jsou stará
+pub fn cache_info(age: Duration) -> String {
     let message = format!(
         "Data z cache ({}). Pro čerstvá data spusť {BIN} --refresh.",
         format_age(age)
     );
 
-    eprintln!("{}\n", message.dimmed());
+    format!("{}\n\n", message.dimmed())
 }
 
 /// převede stáří dat na číselný text

@@ -42,5 +42,6 @@ kofio --search etiopie                 # hledá v názvu kávy i v chuťovém pr
 kofio -m 200 -r kmen -s geisha         # filtry jde kombinovat, krátké přepínače fungují taky
 kofio --on-sale                        # jen zlevněné kávy, sleva je v tabulce červeně u ceny
 kofio --refresh                        # ignoruje 12hodinovou cache a stáhne čerstvá data
+kofio --no-pager                       # vypíše tabulku přímo, bez procházení v less
 kofio --help
 ```
