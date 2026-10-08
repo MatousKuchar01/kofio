@@ -84,7 +84,7 @@ fn main() {
             table::print_coffee_table(&coffees);
         }
         Err(err) => {
-            println!("Error fetching data: {}", err);
+            eprintln!("Nepodařilo se stáhnout data z Kofio.cz: {err}");
         }
     }
 }
