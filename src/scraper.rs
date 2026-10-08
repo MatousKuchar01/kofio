@@ -1,7 +1,7 @@
 use crate::Coffee;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Error;
-use scraper::{Html, Selector};
+use scraper::{ElementRef, Html, Selector};
 use std::collections::HashSet;
 use std::time::Duration;
 
@@ -53,9 +53,9 @@ pub fn fetch_coffees() -> Result<Vec<Coffee>, Error> {
         offset += 24;
 
         // pro vývoj
-        /*if offset > 48 {
+        if offset > 48 {
             break;
-        }*/
+        }
     }
 
     pb.finish_with_message(format!(
@@ -93,6 +93,7 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
     let name_selector = Selector::parse("div.category_item_footer h3 a").unwrap();
     let roaster_selector = Selector::parse("div.category_item_merchant a").unwrap();
     let price_selector = Selector::parse("div.price").unwrap();
+    let old_price_selector = Selector::parse("div.price span.price_old").unwrap();
     let small_selector = Selector::parse("div.price small").unwrap();
     let stock_selector = Selector::parse("div.stock_availability span").unwrap();
     let flavors_selector = Selector::parse("div.category_item_flavors").unwrap();
@@ -158,18 +159,25 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
             let direct_text: String = price_el
                 .children()
                 .filter_map(|node| {
-                    if node.value().is_element()
-                        && node.value().as_element().unwrap().name() == "div"
-                    {
-                        None
-                    } else {
-                        node.value().as_text().map(|t| t.to_string())
+                    if let Some(el) = node.value().as_element() {
+                        if el.name() == "div" || el.classes().any(|c| c == "price_old") {
+                            return None;
+                        }
+                        return ElementRef::wrap(node).map(|e| e.text().collect::<String>());
                     }
+                    node.value().as_text().map(|t| t.to_string())
                 })
                 .collect();
 
             price_czk = extract_price(&direct_text);
         }
+
+        // extrakce původní ceny u zlevněné kávy
+        let old_price_czk = item
+            .select(&old_price_selector)
+            .next()
+            .map(|el| extract_price(&el.text().collect::<String>()))
+            .filter(|old| *old > price_czk);
 
         // extrakce dostupnosti
         let stock = match item.select(&stock_selector).next() {
@@ -194,6 +202,7 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
                 roaster,
                 weight_g,
                 price_czk,
+                old_price_czk,
                 stock,
                 flavors,
                 url,

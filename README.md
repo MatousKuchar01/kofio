@@ -40,5 +40,7 @@ kofio --max-price 180                  # jen kávy do 180 Kč / 100 g
 kofio --roaster beansmith              # jen kávy od konkrétní pražírny
 kofio --search etiopie                 # hledá v názvu kávy i v chuťovém profilu
 kofio -m 200 -r kmen -s geisha         # filtry jde kombinovat, krátké přepínače fungují taky
+kofio --on-sale                        # jen zlevněné kávy, sleva je v tabulce červeně u ceny
+kofio --refresh                        # ignoruje 12hodinovou cache a stáhne čerstvá data
 kofio --help
 ```

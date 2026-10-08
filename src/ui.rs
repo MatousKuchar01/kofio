@@ -58,6 +58,11 @@ pub fn print_base_menu() {
     );
     println!(
         "  {} {}",
+        format!("{:<OPT_WIDTH$}", "-o, --on-sale").bold().yellow(),
+        "│ Zobrazit jen zlevněné kávy".dimmed()
+    );
+    println!(
+        "  {} {}",
         format!("{:<OPT_WIDTH$}", "-R, --refresh").bold().yellow(),
         "│ Stáhnout čerstvá data z webu místo cache".dimmed()
     );

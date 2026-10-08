@@ -15,6 +15,10 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub search: Option<String>,
 
+    /// zobrazit jen zlevněné kávy
+    #[arg(short, long)]
+    pub on_sale: bool,
+
     /// ignorovat cache a stáhnout čerstvá data
     #[arg(short = 'R', long)]
     pub refresh: bool,

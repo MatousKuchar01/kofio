@@ -13,6 +13,7 @@ pub struct Coffee {
     pub roaster: String,
     pub weight_g: u32,
     pub price_czk: f64,
+    pub old_price_czk: Option<f64>,
     pub stock: String,
     pub flavors: String,
     pub url: String,
@@ -22,6 +23,12 @@ impl Coffee {
     fn price_per_100g(&self) -> f64 {
         (self.price_czk / self.weight_g as f64) * 100.0
     }
+
+    /// Sleva v procentech spočítaná z původní a aktuální ceny, `None` u kávy bez slevy.
+    fn discount_percent(&self) -> Option<f64> {
+        self.old_price_czk
+            .map(|old| (old - self.price_czk) / old * 100.0)
+    }
 }
 
 /// hlavní vstupní funkce programu
@@ -30,7 +37,8 @@ fn main() {
 
     let has_filters_applied = args.max_price.is_some() ||
         args.roaster.is_some() ||
-        args.search.is_some();
+        args.search.is_some() ||
+        args.on_sale;
 
     if !has_filters_applied {
         ui::clear_screen();
@@ -55,6 +63,10 @@ fn main() {
                     c.name.to_lowercase().contains(&lower_s)
                         || c.flavors.to_lowercase().contains(&lower_s)
                 });
+            }
+
+            if args.on_sale {
+                coffees.retain(|c| c.old_price_czk.is_some());
             }
 
             // seřadíme vzestupně podle výhodnosti
