@@ -1,4 +1,5 @@
 use crate::Coffee;
+use colored::Colorize;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::*;
 
@@ -72,7 +73,7 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
             Cell::new(&coffee.name),
             Cell::new(&coffee.roaster),
             Cell::new(format!("{}g", coffee.weight_g)),
-            Cell::new(format!("{:.0} Kč", coffee.price_czk)),
+            Cell::new(price_cell(coffee)),
             Cell::new(format!("{:.2} Kč", coffee.price_per_100g())),
             Cell::new(flavors_display),
             Cell::new(&coffee.stock),
@@ -90,6 +91,18 @@ pub fn print_coffee_table(coffees: &[Coffee]) {
     }
 
     println!("{table}");
+}
+
+/// Vrátí text buňky s cenou, u zlevněné kávy doplněný o červené procento slevy, např. "1490 Kč -25 %".
+fn price_cell(coffee: &Coffee) -> String {
+    match coffee.discount_percent() {
+        Some(percent) => format!(
+            "{:.0} Kč {}",
+            coffee.price_czk,
+            format!("-{percent:.0} %").red().bold()
+        ),
+        None => format!("{:.0} Kč", coffee.price_czk),
+    }
 }
 
 /// Vrátí text buňky s odkazem: krátký štítek obalený OSC 8 hyperlinkem na `url`.

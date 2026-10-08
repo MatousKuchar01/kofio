@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// verze formátu cache souboru -> zvýší se, pokud se mění struktura Coffee
-const CACHE_VERSION: u32 = 1;
+const CACHE_VERSION: u32 = 2;
 
 /// Jak dlouho jsou data z cache považovaná za čerstvá (12 hodin).
 pub const CACHE_MAX_AGE: Duration = Duration::from_secs(12 * 60 * 60);
