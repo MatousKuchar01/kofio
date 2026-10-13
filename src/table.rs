@@ -16,6 +16,8 @@ const LINK_LABEL: &str = "otevřít ↗";
 /// * **Zarovnání:** Sloupce pro balení (hmotnost), celkovou cenu a cenu za 100g jsou zarovnány **doprava** pro lepší čitelnost číselných hodnot.
 /// * **Zvýraznění TOP 3:** První **tři položky** (indexy 0, 1, 2) jsou v tabulce zvýrazněny **zelenou barvou a tučným písmem**, což je ideální pro zobrazení nejvýhodnějších nebo nejlépe hodnocených káv.
 /// * **Výpočet ceny:** Pro sloupec "Cena / 100g" funkce interně volá metodu `.price_per_100g()` na struktuře `Coffee`.
+/// * **Hodnocení:** Za názvem kávy i pražírny je v závorce průměr hvězd z recenzí, např. `Kolumbie LA CABAÑA (4.5 ★)`. Hodnotí se z pěti hvězd, maximum se kvůli místu nevypisuje.
+///   Káva nebo pražírna bez recenzí má jen název.
 /// * **Odkaz:** Sloupec "Odkaz" obsahuje krátký štítek, pod kterým je schovaná URL detailu kávy
 ///   jako terminálový hyperlink (OSC 8). V terminálech s podporou hyperlinků (GNOME Terminal, Kitty,
 ///   WezTerm, iTerm2, Windows Terminal, VS Code…) jde kliknout (obvykle s Ctrl), jinde se zobrazí jen štítek.
@@ -70,8 +72,8 @@ pub fn coffee_table(coffees: &[Coffee]) -> String {
 
         let mut row = vec![
             Cell::new(rank.to_string()),
-            Cell::new(&coffee.name),
-            Cell::new(&coffee.roaster),
+            Cell::new(name_with_rating(&coffee.name, coffee.rating)),
+            Cell::new(name_with_rating(&coffee.roaster, coffee.roaster_rating)),
             Cell::new(format!("{}g", coffee.weight_g)),
             Cell::new(price_cell(coffee)),
             Cell::new(format!("{:.2} Kč", coffee.price_per_100g())),
@@ -91,6 +93,14 @@ pub fn coffee_table(coffees: &[Coffee]) -> String {
     }
 
     format!("{table}\n")
+}
+
+/// Vrátí název doplněný o hodnocení v závorce, např. "Beansmith.s (4.5 ★)". Bez hodnocení vrátí jen název.
+fn name_with_rating(name: &str, rating: Option<f64>) -> String {
+    match rating {
+        Some(stars) => format!("{name} ({stars:.1} ★)"),
+        None => name.to_string(),
+    }
 }
 
 /// Vrátí text buňky s cenou, u zlevněné kávy doplněný o červené procento slevy, např. "1490 Kč -25 %".

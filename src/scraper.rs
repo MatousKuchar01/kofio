@@ -1,8 +1,8 @@
-use crate::Coffee;
+use crate::{Coffee, RATING_MAX};
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Error;
 use scraper::{ElementRef, Html, Selector};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 pub fn fetch_coffees() -> Result<Vec<Coffee>, Error> {
@@ -58,12 +58,60 @@ pub fn fetch_coffees() -> Result<Vec<Coffee>, Error> {
         }*/
     }
 
+    fetch_roaster_ratings(&mut all_coffees, &pb);
+
     pb.finish_with_message(format!(
         " Staženo celkem {} káv z Kofio.cz\n",
         all_coffees.len()
     ));
 
     Ok(all_coffees)
+}
+
+/// Stáhne stránku každé pražírny (jednou, i když má víc káv) a doplní kávám hodnocení pražírny
+/// Když se stránku pražírny nepodaří stáhnout, zůstane u jejích káv `roaster_rating = None`
+fn fetch_roaster_ratings(coffees: &mut [Coffee], pb: &ProgressBar) {
+    let roaster_urls: Vec<String> = {
+        let mut seen = HashSet::new();
+        coffees
+            .iter()
+            .map(|c| c.roaster_url.clone())
+            .filter(|url| !url.is_empty() && seen.insert(url.clone()))
+            .collect()
+    };
+
+    let mut ratings: HashMap<String, Option<f64>> = HashMap::new();
+
+    for (index, url) in roaster_urls.iter().enumerate() {
+        pb.set_message(format!(
+            "Stahuji hodnocení pražíren {}/{}...",
+            index + 1,
+            roaster_urls.len()
+        ));
+
+        let rating = reqwest::blocking::get(url)
+            .and_then(|response| response.text())
+            .ok()
+            .and_then(|html| parse_roaster_rating(&html));
+
+        ratings.insert(url.clone(), rating);
+    }
+
+    for coffee in coffees.iter_mut() {
+        coffee.roaster_rating = ratings.get(&coffee.roaster_url).copied().flatten();
+    }
+}
+
+/// Vytáhne průměrné hodnocení pražírny ze stránky pražírny (např. `https://www.kofio.cz/beansmiths`)
+/// Hodnocení je v elementu `div.merchant_rating span.total_nums` jako `3.9<small> / 5</small>`
+fn parse_roaster_rating(html: &str) -> Option<f64> {
+    let document = Html::parse_document(html);
+    let rating_selector = Selector::parse("div.merchant_rating span.total_nums").unwrap();
+
+    document
+        .select(&rating_selector)
+        .next()
+        .and_then(|el| extract_rating(&direct_text(&el)))
 }
 
 /// Parsuje HTML dokument a extrahuje z něj seznam produktů kávy.
@@ -92,6 +140,7 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
     let item_selector = Selector::parse("div.category_item").unwrap();
     let name_selector = Selector::parse("div.category_item_footer h3 a").unwrap();
     let roaster_selector = Selector::parse("div.category_item_merchant a").unwrap();
+    let rating_selector = Selector::parse("a.category_rating_box div.category_rating_box_avg").unwrap();
     let price_selector = Selector::parse("div.price").unwrap();
     let old_price_selector = Selector::parse("div.price span.price_old").unwrap();
     let small_selector = Selector::parse("div.price small").unwrap();
@@ -125,16 +174,24 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
             continue;
         }
 
-        // extrakce pražírny
-        let roaster = match item.select(&roaster_selector).next() {
-            Some(el) => el
-                .value()
-                .attr("title")
-                .unwrap_or("Neznámá pražírna")
-                .trim()
-                .to_string(),
-            None => "Neznámá pražírna".to_string(),
+        // extrakce pražírny a odkazu na její stránku
+        let (roaster, roaster_url) = match item.select(&roaster_selector).next() {
+            Some(el) => (
+                el.value()
+                    .attr("title")
+                    .unwrap_or("Neznámá pražírna")
+                    .trim()
+                    .to_string(),
+                el.value().attr("href").unwrap_or("").trim().to_string(),
+            ),
+            None => ("Neznámá pražírna".to_string(), String::new()),
         };
+
+        // extrakce hodnocení kávy (průměr hvězd), element obsahuje i <small> s počtem recenzí
+        let rating = item
+            .select(&rating_selector)
+            .next()
+            .and_then(|el| extract_rating(&direct_text(&el)));
 
         // extrakce gramáže
         let mut weight_g: u32 = 0;
@@ -199,7 +256,10 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
         if price_czk > 0.0 {
             coffees.push(Coffee {
                 name,
+                rating,
                 roaster,
+                roaster_url,
+                roaster_rating: None,
                 weight_g,
                 price_czk,
                 old_price_czk,
@@ -211,6 +271,23 @@ fn parse_coffees(html: &str) -> Vec<Coffee> {
     }
 
     coffees
+}
+
+/// Vrátí jen přímé textové uzly elementu, bez textu vnořených elementů
+/// např. `<div>1,8<small>3x</small></div>` -> `"1,8"`
+fn direct_text(el: &ElementRef) -> String {
+    el.children()
+        .filter_map(|node| node.value().as_text().map(|t| t.to_string()))
+        .collect()
+}
+
+/// Extrahuje průměrné hodnocení (počet hvězd) z textu, např. `"4,5"` nebo `"3.9"`.
+fn extract_rating(text: &str) -> Option<f64> {
+    text.trim()
+        .replace(',', ".")
+        .parse::<f64>()
+        .ok()
+        .filter(|rating| *rating > 0.0 && *rating <= RATING_MAX)
 }
 
 /// Extrahuje hmotnost v gramech z textového řetězce.

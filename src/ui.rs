@@ -53,6 +53,12 @@ pub fn base_menu() -> String {
     let _ = writeln!(
         menu,
         "  {} {}",
+        format!("{:<OPT_WIDTH$}", "-w, --max-weight <G>").bold().yellow(),
+        "│ Maximální velikost balení v gramech".dimmed()
+    );
+    let _ = writeln!(
+        menu,
+        "  {} {}",
         format!("{:<OPT_WIDTH$}", "-r, --roaster <NÁZEV>").bold().yellow(),
         "│ Filtrovat pouze konkrétní pražírnu".dimmed()
     );
@@ -88,6 +94,11 @@ pub fn base_menu() -> String {
     let _ = writeln!(
         menu,
         "  {} {BIN} -r \"beansmith\" -m 200",
+        "•".bright_green()
+    );
+    let _ = writeln!(
+        menu,
+        "  {} {BIN} -w 250",
         "•".bright_green()
     );
     let _ = writeln!(
