@@ -37,9 +37,10 @@ cargo install --git https://github.com/MatousKuchar01/kofio
 ```sh
 kofio                                  # celá nabídka seřazená podle ceny za 100 g
 kofio --max-price 180                  # jen kávy do 180 Kč / 100 g
+kofio --max-weight 250                 # jen balení do 250 g
 kofio --roaster beansmith              # jen kávy od konkrétní pražírny
 kofio --search etiopie                 # hledá v názvu kávy i v chuťovém profilu
-kofio -m 200 -r kmen -s geisha         # filtry jde kombinovat, krátké přepínače fungují taky
+kofio -m 200 -w 500 -r kmen -s geisha  # filtry jde kombinovat, krátké přepínače fungují taky
 kofio --on-sale                        # jen zlevněné kávy, sleva je v tabulce červeně u ceny
 kofio --refresh                        # ignoruje 12hodinovou cache a stáhne čerstvá data
 kofio --no-pager                       # vypíše tabulku přímo, bez procházení v less

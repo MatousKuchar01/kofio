@@ -10,10 +10,16 @@ mod table;
 mod ui;
 mod cache;
 
+/// Maximální počet hvězd v hodnocení na Kofio.cz (káva i pražírna se hodnotí 1–5 hvězdami)
+pub const RATING_MAX: f64 = 5.0;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Coffee {
     pub name: String,
+    pub rating: Option<f64>,
     pub roaster: String,
+    pub roaster_url: String,
+    pub roaster_rating: Option<f64>,
     pub weight_g: u32,
     pub price_czk: f64,
     pub old_price_czk: Option<f64>,
@@ -39,6 +45,7 @@ fn main() {
     let args = cli::CliArgs::parse();
 
     let has_filters_applied = args.max_price.is_some() ||
+        args.max_weight.is_some() ||
         args.roaster.is_some() ||
         args.search.is_some() ||
         args.on_sale;
@@ -59,6 +66,10 @@ fn main() {
             // filtry podle zadání uživatele
             if let Some(max_p) = args.max_price {
                 coffees.retain(|c| c.price_per_100g() <= max_p);
+            }
+
+            if let Some(max_w) = args.max_weight {
+                coffees.retain(|c| c.weight_g <= max_w);
             }
 
             if let Some(ref r_filter) = args.roaster {

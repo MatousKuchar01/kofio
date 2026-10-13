@@ -7,6 +7,10 @@ pub struct CliArgs {
     #[arg(short, long)]
     pub max_price: Option<f64>,
 
+    /// max velikost balení v gramech (např. --max-weight 250)
+    #[arg(short = 'w', long)]
+    pub max_weight: Option<u32>,
+
     /// filtr podle názvu pražírny (např. --roaster "Beansmith")
     #[arg(short, long)]
     pub roaster: Option<String>,
